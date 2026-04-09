@@ -5,10 +5,10 @@ In this project we build a full working pipeline that gathers transportation dat
 Steps:
 
 1) Ingesting + data cleaning - AJ
-2) Pipeline to postgress - Sreesh
-3) ERD - Altar
-4) Visualization (Looker/Streamlit...) - Altar
-5) Presentation
+2) ERD - Altar
+3) Pipeline to postgress - Sreesh
+5) Visualization (Looker/Streamlit...) - Altar
+6) Presentation
 
 1. Setup a data pipeline to download the initial data set through REST API.
 2. Develop a set of cleaning functions for the data set. Each function needs to take care of one small cleaning function, e.g., normalizing capitalization.
