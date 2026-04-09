@@ -10,6 +10,8 @@ Steps:
 5) Visualization (Looker/Streamlit...) - Altar
 6) Presentation
 
+REQUIRED:
+
 1. Setup a data pipeline to download the initial data set through REST API.
 2. Develop a set of cleaning functions for the data set. Each function needs to take care of one small cleaning function, e.g., normalizing capitalization.
 3. Clean the data set and save cleaned data either in original form or in SQLite.
