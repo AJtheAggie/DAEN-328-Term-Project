@@ -1,0 +1,16 @@
+# Data ingestion & transformation
+requests
+pandas
+numpy
+python-dotenv
+
+# Database
+psycopg2-binary
+sqlalchemy
+
+# Visualization
+streamlit
+plotly
+
+# HTTP / API
+urllib3
