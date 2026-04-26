@@ -45,7 +45,7 @@ See `NYC_ERD.png` for the full entity-relationship diagram.
 
 ### 1. Clone the repository
 ```bash
-git clone <your-github-repo-url>
+git clone https://github.com/AJtheAggie/DAEN-389-Term-Project.git
 ```
 Then open the cloned folder in your terminal.
 
