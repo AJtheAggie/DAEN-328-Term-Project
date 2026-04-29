@@ -180,9 +180,7 @@ st.sidebar.markdown("## 🔎 Filters")
 all_years      = sorted(df["year"].unique())
 selected_years = st.sidebar.multiselect("Year(s)", all_years, default=all_years)
 selected_types = st.sidebar.multiselect("Transport Type(s)", types, default=types)
-min_date  = df["date"].min().date()
-max_date  = df["date"].max().date()
-date_range = st.sidebar.date_input("Date Range", value=(min_date, max_date), min_value=min_date, max_value=max_date)
+
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("## 🔄 Batch Update")
@@ -202,9 +200,6 @@ if st.sidebar.button("Refresh Data"):
 
 # ── Apply filters ─────────────────────────────────────────────────────────────
 filtered = df[df["year"].isin(selected_years) & df["transport_type"].isin(selected_types)]
-if len(date_range) == 2:
-    filtered = filtered[(filtered["date"] >= pd.Timestamp(date_range[0])) &
-                        (filtered["date"] <= pd.Timestamp(date_range[1]))]
 
 filtered_yearly = yearly[yearly["year"].isin(selected_years) & yearly["transport_type"].isin(selected_types)]
 
@@ -237,7 +232,7 @@ fig1 = px.line(filtered.groupby(["date","transport_type"])["ridership"].sum().re
                x="date", y="ridership", color="transport_type", color_discrete_map=color_map,
                template="plotly_dark", labels={"ridership":"Daily Riders","date":"Date","transport_type":"Mode"})
 fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", hovermode="x unified")
-st.plotly_chart(fig1, width='stretch')
+st.plotly_chart(fig1, use_container_width=True)
 
 # ── Chart 2: Yearly totals (from yearly_ridership table) ──────────────────────
 st.markdown("### 📊 Yearly Total Ridership by Mode")
@@ -249,7 +244,7 @@ fig2.for_each_trace(lambda t: t.update(
     textposition="outside"
 ))
 fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(tickmode="linear"))
-st.plotly_chart(fig2, width='stretch')
+st.plotly_chart(fig2, use_container_width=True)
 
 # ── Chart 3 & 4 side by side ──────────────────────────────────────────────────
 col_a, col_b = st.columns(2)
@@ -260,7 +255,7 @@ with col_a:
     fig3 = px.pie(share, names="transport_type", values="ridership", color="transport_type",
                   color_discrete_map=color_map, hole=0.45, template="plotly_dark")
     fig3.update_layout(paper_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig3, width='stretch')
+    st.plotly_chart(fig3, use_container_width=True)
 
 with col_b:
     st.markdown("### 📅 Avg Ridership by Month")
@@ -274,7 +269,7 @@ with col_b:
                   labels={"ridership":"Avg Riders","month_name":"Month","transport_type":"Mode"},
                   category_orders={"month_name": list(month_labels.values())})
     fig4.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
-    st.plotly_chart(fig4, width='stretch')
+    st.plotly_chart(fig4, use_container_width=True)
 
 # ── Chart 5: YoY % change ─────────────────────────────────────────────────────
 st.markdown("### 📉 Year-over-Year Ridership Change (%)")
@@ -285,12 +280,12 @@ fig5 = px.line(yoy.dropna(subset=["pct_change"]), x="year", y="pct_change", colo
                labels={"pct_change":"YoY Change (%)","year":"Year","transport_type":"Mode"})
 fig5.add_hline(y=0, line_dash="dot", line_color="#8b949e")
 fig5.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(tickmode="linear"))
-st.plotly_chart(fig5, width='stretch')
+st.plotly_chart(fig5, use_container_width=True)
 
 # ── Raw data table ────────────────────────────────────────────────────────────
 st.markdown("---")
 with st.expander("🗃️ View Raw Data"):
     search = st.text_input("Search transport type", "")
     display_df = filtered[filtered["transport_type"].str.contains(search, case=False)] if search else filtered
-    st.dataframe(display_df.sort_values("date", ascending=False).reset_index(drop=True), width='stretch')
+    st.dataframe(display_df.sort_values("date", ascending=False).reset_index(drop=True), use_container_width=True)
     st.caption(f"{len(display_df):,} rows shown")
