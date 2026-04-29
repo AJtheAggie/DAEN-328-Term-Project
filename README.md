@@ -84,7 +84,7 @@ The dashboard includes:
 
 ## Screenshot
 
-![Dashboard Screenshot](Streamlit_Dashboard.png)
+![Dashboard Screenshot](Streamlit_Dashboard_Final.png)
 
 ## Group Members & Contributions
 
