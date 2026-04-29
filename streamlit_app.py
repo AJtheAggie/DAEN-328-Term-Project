@@ -226,66 +226,76 @@ metric_card(c3, peak_row["date"].strftime("%b %d, %Y") if peak_row is not None e
 metric_card(c4, top_type.capitalize(), "Top Mode")
 st.markdown("---")
 
-# ── Chart 1: Daily ridership line ─────────────────────────────────────────────
-st.markdown("### 📈 Daily Ridership Over Time")
+# ── Chart 1: Daily Ridership Trend ───────────────────────────────────────────
+st.markdown("### 📈 Daily Ridership Trend (2020–2024)")
+st.caption("How did subway, bus, and ferry ridership change over time?")
 fig1 = px.line(filtered.groupby(["date","transport_type"])["ridership"].sum().reset_index(),
                x="date", y="ridership", color="transport_type", color_discrete_map=color_map,
                template="plotly_dark", labels={"ridership":"Daily Riders","date":"Date","transport_type":"Mode"})
 fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", hovermode="x unified")
-st.plotly_chart(fig1, use_container_width=True)
+st.plotly_chart(fig1, width='stretch')
 
-# ── Chart 2: Yearly totals (from yearly_ridership table) ──────────────────────
-st.markdown("### 📊 Yearly Total Ridership by Mode")
-fig2 = px.bar(filtered_yearly, x="year", y="total_ridership", color="transport_type",
-              barmode="group", color_discrete_map=color_map, template="plotly_dark",
-              labels={"total_ridership":"Total Riders","year":"Year","transport_type":"Mode"})
-fig2.for_each_trace(lambda t: t.update(
-    text=[f"{v/1e9:.2f}B" if v >= 1e9 else f"{v/1e6:.0f}M" for v in t.y],
-    textposition="outside"
-))
-fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(tickmode="linear"))
-st.plotly_chart(fig2, use_container_width=True)
+# ── Chart 2: Weekday vs Weekend ───────────────────────────────────────────────
+st.markdown("### 🗓️ Weekday vs Weekend Ridership")
+st.caption("How does transit usage differ between weekdays and weekends?")
+wkd = filtered.copy()
+wkd["day_type"] = wkd["date"].dt.dayofweek.apply(lambda x: "Weekend" if x >= 5 else "Weekday")
+wkd_avg = wkd.groupby(["transport_type","day_type"])["ridership"].mean().reset_index()
+fig2 = px.bar(wkd_avg, x="transport_type", y="ridership", color="day_type",
+              barmode="group", template="plotly_dark",
+              color_discrete_map={"Weekday":"#58a6ff","Weekend":"#f78166"},
+              labels={"ridership":"Avg Daily Riders","transport_type":"Mode","day_type":"Day Type"})
+fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                   legend_title_text="Day Type")
+st.plotly_chart(fig2, width='stretch')
 
-# ── Chart 3 & 4 side by side ──────────────────────────────────────────────────
-col_a, col_b = st.columns(2)
+# ── Chart 3: Variability by Mode (Box Plot) ───────────────────────────────────
+st.markdown("### 📦 Ridership Variability by Mode")
+st.caption("Which transportation mode is the most stable, and which is the most volatile?")
+fig3 = px.box(filtered, x="transport_type", y="ridership", color="transport_type",
+              color_discrete_map=color_map, template="plotly_dark",
+              labels={"ridership":"Daily Riders","transport_type":"Mode"},
+              points="outliers")
+fig3.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+st.plotly_chart(fig3, width='stretch')
 
-with col_a:
-    st.markdown("### 🥧 Ridership Share by Mode")
-    share = filtered.groupby("transport_type")["ridership"].sum().reset_index()
-    fig3 = px.pie(share, names="transport_type", values="ridership", color="transport_type",
-                  color_discrete_map=color_map, hole=0.45, template="plotly_dark")
-    fig3.update_layout(paper_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig3, use_container_width=True)
+# ── Chart 4: Monthly Heatmap ──────────────────────────────────────────────────
+heatmap_title = "All Modes Combined" if len(selected_types) == len(types) else ", ".join([t.capitalize() for t in selected_types])
+st.markdown(f"### 🗺️ Monthly Ridership Heatmap ({heatmap_title})")
+st.caption("When were ridership levels highest and lowest across 2020–2024?")
+heatmap_df = filtered.copy()
+heatmap_df["month"] = heatmap_df["date"].dt.month
+month_labels = {1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"}
+heatmap_pivot = heatmap_df.groupby(["year","month"])["ridership"].sum().reset_index()
+heatmap_pivot["month_name"] = heatmap_pivot["month"].map(month_labels)
+heatmap_pivot = heatmap_pivot.pivot(index="year", columns="month_name", values="ridership")
+month_order = list(month_labels.values())
+heatmap_pivot = heatmap_pivot.reindex(columns=[m for m in month_order if m in heatmap_pivot.columns])
+fig4 = px.imshow(
+    heatmap_pivot,
+    color_continuous_scale="Blues",
+    template="plotly_dark",
+    labels={"x":"Month","y":"Year","color":"Total Riders"},
+    aspect="auto"
+)
+fig4.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                   coloraxis_showscale=True)
+st.plotly_chart(fig4, width='stretch')
 
-with col_b:
-    st.markdown("### 📅 Avg Ridership by Month")
-    monthly = filtered.copy()
-    monthly["month"] = monthly["date"].dt.month
-    monthly_avg = monthly.groupby(["month","transport_type"])["ridership"].mean().reset_index()
-    month_labels = {1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"}
-    monthly_avg["month_name"] = monthly_avg["month"].map(month_labels)
-    fig4 = px.bar(monthly_avg, x="month_name", y="ridership", color="transport_type", barmode="group",
-                  color_discrete_map=color_map, template="plotly_dark",
-                  labels={"ridership":"Avg Riders","month_name":"Month","transport_type":"Mode"},
-                  category_orders={"month_name": list(month_labels.values())})
-    fig4.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
-    st.plotly_chart(fig4, use_container_width=True)
-
-# ── Chart 5: YoY % change ─────────────────────────────────────────────────────
-st.markdown("### 📉 Year-over-Year Ridership Change (%)")
-yoy = filtered_yearly.sort_values(["transport_type","year"]).copy()
-yoy["pct_change"] = yoy.groupby("transport_type")["total_ridership"].pct_change() * 100
-fig5 = px.line(yoy.dropna(subset=["pct_change"]), x="year", y="pct_change", color="transport_type",
-               markers=True, color_discrete_map=color_map, template="plotly_dark",
-               labels={"pct_change":"YoY Change (%)","year":"Year","transport_type":"Mode"})
-fig5.add_hline(y=0, line_dash="dot", line_color="#8b949e")
-fig5.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(tickmode="linear"))
-st.plotly_chart(fig5, use_container_width=True)
+# ── Chart 5: Ridership Share Pie Chart ───────────────────────────────────────
+st.markdown("### 🥧 Ridership Share by Mode")
+st.caption("What percentage of all NYC transit rides does each mode account for?")
+share = filtered.groupby("transport_type")["ridership"].sum().reset_index()
+fig5 = px.pie(share, names="transport_type", values="ridership", color="transport_type",
+              color_discrete_map=color_map, hole=0.45, template="plotly_dark",
+              labels={"transport_type":"Mode","ridership":"Total Riders"})
+fig5.update_layout(paper_bgcolor="rgba(0,0,0,0)")
+st.plotly_chart(fig5, width='stretch')
 
 # ── Raw data table ────────────────────────────────────────────────────────────
 st.markdown("---")
 with st.expander("🗃️ View Raw Data"):
     search = st.text_input("Search transport type", "")
     display_df = filtered[filtered["transport_type"].str.contains(search, case=False)] if search else filtered
-    st.dataframe(display_df.sort_values("date", ascending=False).reset_index(drop=True), use_container_width=True)
+    st.dataframe(display_df.sort_values("date", ascending=False).reset_index(drop=True), width='stretch')
     st.caption(f"{len(display_df):,} rows shown")
